@@ -135,6 +135,7 @@ canvas.dust{position:absolute;inset:0;width:100%;height:100%;pointer-events:none
 form{display:grid;gap:1.5rem;text-align:left}
 label{display:grid;gap:.25rem;font-family:var(--ui);font-size:.95rem;letter-spacing:.04em;color:rgba(244,228,201,.75)}
 input[type=text],input[type=tel]{font-family:var(--display);font-size:1.35rem;color:var(--champagne);background:transparent;border:0;border-bottom:1px solid var(--brass);border-radius:0;padding:.45rem .1rem .55rem;width:100%;transition:border-color .2s}
+input[type=tel]{font-family:var(--ui);font-size:1.2rem;letter-spacing:.06em}
 input::placeholder{color:rgba(244,228,201,.32);font-style:italic}
 input:focus{outline:none;border-bottom-color:var(--honey);box-shadow:0 1px 0 0 var(--honey)}
 button{margin-top:.5rem;font-family:var(--ui);font-weight:500;font-size:1.05rem;letter-spacing:.12em;color:var(--night);background:var(--honey);border:0;border-radius:99px;padding:1rem 1.5rem;cursor:pointer;transition:transform .2s,background .2s}
@@ -187,7 +188,7 @@ button:disabled{opacity:.6;cursor:wait;transform:none}
   <p class="sub">Tell us your name and number so we know you’re coming. Keep it a surprise.</p>
   <form id="f" novalidate>
     <label>Your name<input type="text" name="name" id="name" autocomplete="name" maxlength="80" required></label>
-    <label>Phone number<input type="tel" name="phone" id="phone" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="+91 98765 43210" required></label>
+    <label>Phone number<input type="tel" name="phone" id="phone" autocomplete="tel" inputmode="tel" maxlength="20" value="+91 " placeholder="98765 43210" required></label>
     <input class="hp" type="text" name="website" id="website" tabindex="-1" autocomplete="off" aria-hidden="true">
     <button type="submit" id="go">I’m coming</button>
     <p id="msg" role="status" aria-live="polite"></p>
@@ -209,12 +210,15 @@ const RSVP_ENDPOINT = "https://ollo-rsvp.night3loode.workers.dev/"; // PLACEHOLD
 const RSVP_KEY = "258d50c19ddd73f2c435f7934bdab71d"; // PLACEHOLDER: invite key, deliberately removed
 
 const f=document.getElementById('f'),msg=document.getElementById('msg'),go=document.getElementById('go');
+const PFX='+91 ';
+const normPhone=v=>{v=v.trim();if(v.startsWith(PFX))v=v.slice(PFX.length);let d=v.replace(/\D/g,'');if(d.startsWith('91')&&d.length>10)d=d.slice(2);if(d==='91')d='';d=d.replace(/^0+/,'');return d};
+f.phone.addEventListener('input',()=>{const v=f.phone.value;if(!v.startsWith(PFX))f.phone.value=v?PFX+normPhone(v):''});
 f.addEventListener('submit',async e=>{
   e.preventDefault(); msg.className='';
-  const name=f.name.value.trim(), phone=f.phone.value.trim();
+  const name=f.name.value.trim(), pd=normPhone(f.phone.value), phone=PFX+pd;
   if(f.website.value) return;
   if(name.length<2){msg.textContent='Please add your name.';msg.className='err';f.name.focus();return}
-  if(phone.replace(/\D/g,'').length<7||!/^[+\d\s()-]+$/.test(phone)){msg.textContent='Please add a valid phone number.';msg.className='err';f.phone.focus();return}
+  if(pd.length<7){msg.textContent='Please add a valid phone number.';msg.className='err';f.phone.focus();return}
   go.disabled=true;
   try{
     if(RSVP_ENDPOINT){
